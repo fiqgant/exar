@@ -13,18 +13,31 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
-  const [users, me, { error, success }] = await Promise.all([
+  const [users, me, allClients, { error, success }] = await Promise.all([
     prisma.profile.findMany({ orderBy: { createdAt: "asc" } }),
     getCurrentProfile(),
+    prisma.client.findMany({
+      select: { id: true, businessName: true, profileId: true },
+      orderBy: { businessName: "asc" },
+    }),
     searchParams,
   ]);
+
+  const usersWithClients = users.map((u) => {
+    const linkedClient = allClients.find((c) => c.profileId === u.id);
+    return {
+      ...u,
+      clientId: linkedClient?.id ?? null,
+      businessName: linkedClient?.businessName ?? null,
+    };
+  });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Users & Roles</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tambah akun baru dan atur role admin/client.
+          Kelola akun pengguna, edit kredensial/password, tautkan ke bisnis klien, atau ubah role.
         </p>
       </div>
 
@@ -48,11 +61,11 @@ export default async function AdminUsersPage({
         <CardContent>
           <form
             action={createUserAccount}
-            className="grid gap-4 sm:grid-cols-3"
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
           >
             <div className="space-y-2">
               <Label htmlFor="new-email">Email</Label>
-              <Input id="new-email" name="email" type="email" required />
+              <Input id="new-email" name="email" type="email" placeholder="user@contoh.com" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-password">Password</Label>
@@ -60,6 +73,7 @@ export default async function AdminUsersPage({
                 id="new-password"
                 name="password"
                 type="password"
+                placeholder="Min. 6 karakter"
                 minLength={6}
                 required
               />
@@ -76,14 +90,34 @@ export default async function AdminUsersPage({
                 <option value="ADMIN">Admin</option>
               </select>
             </div>
-            <div className="sm:col-span-3">
+            <div className="space-y-2">
+              <Label htmlFor="new-client">Tautkan Bisnis (Opsional)</Label>
+              <select
+                id="new-client"
+                name="clientId"
+                defaultValue="none"
+                className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              >
+                <option value="none">— Tidak ditautkan —</option>
+                {allClients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.businessName} {c.profileId ? "(Sudah ada akun)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4">
               <Button type="submit">Buat Akun</Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      <UserTable users={users} currentUserId={me?.id} />
+      <UserTable
+        users={usersWithClients}
+        clients={allClients}
+        currentUserId={me?.id}
+      />
     </div>
   );
 }

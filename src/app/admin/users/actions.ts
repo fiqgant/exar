@@ -11,6 +11,7 @@ const createUserSchema = z.object({
   email: z.string().trim().email("Format email tidak valid."),
   password: z.string().min(6, "Password minimal 6 karakter."),
   role: z.enum(["ADMIN", "CLIENT"]),
+  clientId: z.string().optional(),
 });
 
 /** Admin-provisioned account: created pre-confirmed, so it can log in immediately. */
@@ -21,6 +22,7 @@ export async function createUserAccount(formData: FormData) {
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role"),
+    clientId: formData.get("clientId") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -30,7 +32,7 @@ export async function createUserAccount(formData: FormData) {
     );
   }
 
-  const { email, password, role } = parsed.data;
+  const { email, password, role, clientId } = parsed.data;
 
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.createUser({
@@ -51,8 +53,123 @@ export async function createUserAccount(formData: FormData) {
     update: { role },
   });
 
+  if (role === "CLIENT" && clientId && clientId !== "none") {
+    await prisma.client.updateMany({
+      where: { profileId: data.user.id },
+      data: { profileId: null },
+    });
+    await prisma.client.update({
+      where: { id: clientId },
+      data: { profileId: data.user.id },
+    });
+  }
+
   revalidatePath("/admin/users");
+  revalidatePath("/admin/klien");
   redirect("/admin/users?success=1");
+}
+
+export async function updateUserAccount(id: string, formData: FormData) {
+  const currentAdmin = await requireAdmin();
+
+  const email = (formData.get("email") as string)?.trim();
+  const role = (formData.get("role") as string)?.trim() as "ADMIN" | "CLIENT";
+  const password = (formData.get("password") as string)?.trim();
+  const clientId = (formData.get("clientId") as string)?.trim();
+
+  if (!email || !email.includes("@")) {
+    return { success: false, error: "Format email tidak valid." };
+  }
+
+  if (!["ADMIN", "CLIENT"].includes(role)) {
+    return { success: false, error: "Role tidak valid." };
+  }
+
+  if (id === currentAdmin.id && role !== "ADMIN") {
+    return { success: false, error: "Tidak dapat mengubah role akun Anda sendiri." };
+  }
+
+  if (password && password.length < 6) {
+    return { success: false, error: "Password baru minimal 6 karakter." };
+  }
+
+  try {
+    const existing = await prisma.profile.findUnique({ where: { id } });
+    if (!existing) {
+      return { success: false, error: "User tidak ditemukan." };
+    }
+
+    const supabaseAdmin = createAdminClient();
+    const updateAttrs: {
+      email?: string;
+      password?: string;
+      email_confirm?: boolean;
+    } = {};
+
+    if (email !== existing.email) {
+      updateAttrs.email = email;
+      updateAttrs.email_confirm = true;
+    }
+
+    if (password && password.length >= 6) {
+      updateAttrs.password = password;
+    }
+
+    if (Object.keys(updateAttrs).length > 0) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        id,
+        updateAttrs,
+      );
+      if (authError) {
+        return { success: false, error: authError.message };
+      }
+    }
+
+    // Update Prisma profile
+    await prisma.profile.update({
+      where: { id },
+      data: { email, role },
+    });
+
+    // Update Client workspace link
+    if (role === "CLIENT") {
+      if (clientId && clientId !== "none") {
+        // Unlink previous client if different
+        await prisma.client.updateMany({
+          where: { profileId: id, NOT: { id: clientId } },
+          data: { profileId: null },
+        });
+        // Link new client
+        await prisma.client.update({
+          where: { id: clientId },
+          data: { profileId: id },
+        });
+      } else if (clientId === "none") {
+        // Unlink any client from this user
+        await prisma.client.updateMany({
+          where: { profileId: id },
+          data: { profileId: null },
+        });
+      }
+    } else {
+      // If role is ADMIN, clear any client link
+      await prisma.client.updateMany({
+        where: { profileId: id },
+        data: { profileId: null },
+      });
+    }
+
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/klien");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (err) {
+    console.error("Failed to update user account:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Gagal memperbarui akun user.",
+    };
+  }
 }
 
 export async function updateUserRole(id: string, formData: FormData) {
