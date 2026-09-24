@@ -9,28 +9,46 @@ import {
   Users,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
 import { daysUntil, formatDate } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+type ContractWithClient = Prisma.ContractGetPayload<{
+  include: { client: true };
+}>;
+
 export default async function AdminRingkasanPage() {
-  const [
-    clientCount,
-    activeContracts,
-    pendingApproval,
-    revisions,
-    leadCount,
-    contracts,
-  ] = await Promise.all([
-    prisma.client.count({ where: { isActive: true } }),
-    prisma.contract.count({ where: { isActive: true } }),
-    prisma.content.count({ where: { status: "DRAFT" } }),
-    prisma.content.count({ where: { status: "REVISION" } }),
-    prisma.lead.count(),
-    prisma.contract.findMany({
-      where: { isActive: true },
-      include: { client: true },
-      orderBy: { endDate: "asc" },
-    }),
-  ]);
+  let clientCount = 0;
+  let activeContracts = 0;
+  let pendingApproval = 0;
+  let revisions = 0;
+  let leadCount = 0;
+  let contracts: ContractWithClient[] = [];
+
+  try {
+    const res = await Promise.all([
+      prisma.client.count({ where: { isActive: true } }),
+      prisma.contract.count({ where: { isActive: true } }),
+      prisma.content.count({ where: { status: "DRAFT" } }),
+      prisma.content.count({ where: { status: "REVISION" } }),
+      prisma.lead.count(),
+      prisma.contract.findMany({
+        where: { isActive: true },
+        include: { client: true },
+        orderBy: { endDate: "asc" },
+      }),
+    ]);
+    clientCount = res[0];
+    activeContracts = res[1];
+    pendingApproval = res[2];
+    revisions = res[3];
+    leadCount = res[4];
+    contracts = res[5] as typeof contracts;
+  } catch (error) {
+    console.error("Error fetching admin ringkasan:", error);
+  }
 
   const expiring = contracts.filter((c) => {
     const d = daysUntil(c.endDate);
