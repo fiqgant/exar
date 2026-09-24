@@ -41,7 +41,7 @@ export default async function KontenPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">\u25cf Content</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">● Content</p>
         <h1 className="mt-1 text-3xl font-black tracking-tight text-[#2d2d2d]">Content Management</h1>
         <p className="mt-1 text-sm text-muted-foreground">Tinjau, setujui, atau minta revisi untuk setiap konten.</p>
       </div>
@@ -100,18 +100,18 @@ export default async function KontenPage({
                     />
                   ) : item.videoUrl ? (
                     <div className="flex h-full w-full items-center justify-center bg-black/90 text-white">
-                      <span className="rounded-lg border-2 border-white/30 bg-white/10 px-3 py-1 text-xs font-black backdrop-blur-sm">\u25b6 Video</span>
+                      <span className="rounded-lg border-2 border-white/30 bg-white/10 px-3 py-1 text-xs font-black backdrop-blur-sm">▶ Video</span>
                     </div>
                   ) : (
                     <div className="absolute inset-0 bg-dots text-white/40 opacity-60" />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent" />
                   <span className="absolute bottom-2.5 left-2.5 rounded-md border border-white/30 bg-black/60 px-2.5 py-1 text-[10px] font-black text-white backdrop-blur-md">
-                    {CONTENT_TYPE_LABEL[item.type]} \u00b7 {PLATFORM_LABEL[item.platform]}
+                    {CONTENT_TYPE_LABEL[item.type]} · {PLATFORM_LABEL[item.platform]}
                   </span>
                   {item.videoUrl && isYouTubeUrl(item.videoUrl) && (
                     <span className="absolute top-2.5 right-2.5 rounded-md border border-red-500/50 bg-red-600/90 px-2 py-0.5 text-[10px] font-black text-white">
-                      \u25b6 YouTube
+                      ▶ YouTube
                     </span>
                   )}
                 </div>
