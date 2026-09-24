@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShieldCheck, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ExarLogo } from "@/components/exar-logo";
@@ -15,7 +15,13 @@ const NAV = [
   { href: "/syarat-ketentuan", label: "Syarat & Ketentuan" },
 ];
 
-export function SiteHeader() {
+export type SiteHeaderProfile = {
+  id: string;
+  email: string;
+  role: "ADMIN" | "CLIENT";
+} | null;
+
+export function SiteHeader({ profile }: { profile?: SiteHeaderProfile }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -25,6 +31,9 @@ export function SiteHeader() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const destination = profile?.role === "ADMIN" ? "/admin" : "/dashboard";
+  const destinationLabel = profile?.role === "ADMIN" ? "Admin Panel" : "Dashboard";
 
   return (
     <header
@@ -51,14 +60,34 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <Button variant="ghost" size="sm" render={<Link href="/login" />}>
-            Masuk
-          </Button>
-          <Button size="sm" render={<Link href="/register" />}>
-            Daftar Gratis
-          </Button>
-        </div>
+        {profile ? (
+          <div className="hidden items-center gap-3 lg:flex">
+            <div className="flex items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs">
+              {profile.role === "ADMIN" ? (
+                <ShieldCheck className="size-3.5 text-primary shrink-0" />
+              ) : (
+                <User className="size-3.5 text-muted-foreground shrink-0" />
+              )}
+              <span className="max-w-[150px] truncate text-foreground font-medium">
+                {profile.email}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+              render={<Link href={destination}>{destinationLabel}</Link>}
+            />
+          </div>
+        ) : (
+          <div className="hidden items-center gap-2 lg:flex">
+            <Button variant="ghost" size="sm" render={<Link href="/login" />}>
+              Masuk
+            </Button>
+            <Button size="sm" render={<Link href="/register" />}>
+              Daftar Gratis
+            </Button>
+          </div>
+        )}
 
         <button
           type="button"
@@ -84,23 +113,44 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
-            <Button
-              className="mt-3"
-              render={
-                <Link href="/register" onClick={() => setOpen(false)}>
-                  Daftar Gratis
-                </Link>
-              }
-            />
-            <Button
-              variant="ghost"
-              className="mt-2"
-              render={
-                <Link href="/login" onClick={() => setOpen(false)}>
-                  Sudah punya akun? Masuk
-                </Link>
-              }
-            />
+
+            {profile ? (
+              <div className="mt-3 space-y-2 border-t border-border pt-3">
+                <p className="px-3 text-xs text-muted-foreground truncate">
+                  Masuk sebagai:{" "}
+                  <strong className="text-foreground">{profile.email}</strong>{" "}
+                  ({profile.role === "ADMIN" ? "Admin" : "Client"})
+                </p>
+                <Button
+                  className="w-full bg-primary text-primary-foreground"
+                  render={
+                    <Link href={destination} onClick={() => setOpen(false)}>
+                      Buka {destinationLabel}
+                    </Link>
+                  }
+                />
+              </div>
+            ) : (
+              <div className="mt-3 space-y-2 border-t border-border pt-3">
+                <Button
+                  className="w-full"
+                  render={
+                    <Link href="/register" onClick={() => setOpen(false)}>
+                      Daftar Gratis
+                    </Link>
+                  }
+                />
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  render={
+                    <Link href="/login" onClick={() => setOpen(false)}>
+                      Sudah punya akun? Masuk
+                    </Link>
+                  }
+                />
+              </div>
+            )}
           </nav>
         </div>
       )}

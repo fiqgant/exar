@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react";
+import { getCurrentProfile } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +13,12 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
+  const profile = await getCurrentProfile();
+  if (profile) {
+    if (profile.role === "ADMIN") redirect("/admin");
+    redirect("/dashboard");
+  }
+
   const { error, notice } = await searchParams;
 
   return (

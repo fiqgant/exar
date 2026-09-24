@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Camera,
   Clapperboard,
@@ -98,8 +99,23 @@ const PROCESS = [
   },
 ];
 
-export default async function Home() {
-  const [packages, portfolios, profile, settings] = await Promise.all([
+export default async function Home({
+  searchParams,
+}: {
+  searchParams?: Promise<{ view?: string }>;
+}) {
+  const params = searchParams ? await searchParams : {};
+  const profile = await getCurrentProfile();
+
+  if (profile && params.view !== "landing") {
+    if (profile.role === "ADMIN") {
+      redirect("/admin");
+    } else {
+      redirect("/dashboard");
+    }
+  }
+
+  const [packages, portfolios, settings] = await Promise.all([
     prisma.package.findMany({
       where: { isActive: true },
       orderBy: { order: "asc" },
@@ -108,7 +124,6 @@ export default async function Home() {
       where: { isActive: true },
       orderBy: { order: "asc" },
     }),
-    getCurrentProfile(),
     getSiteSettings(),
   ]);
 
@@ -119,7 +134,7 @@ export default async function Home() {
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader profile={profile} />
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden bg-[#242424] text-white">
@@ -410,7 +425,23 @@ export default async function Home() {
                     size="lg"
                     variant="ghost"
                     className="text-white/80 hover:text-white hover:bg-white/10"
-                    render={<Link href="/login">Masuk ke Dashboard</Link>}
+                    render={
+                      <Link
+                        href={
+                          profile
+                            ? profile.role === "ADMIN"
+                              ? "/admin"
+                              : "/dashboard"
+                            : "/login"
+                        }
+                      >
+                        {profile
+                          ? profile.role === "ADMIN"
+                            ? "Buka Admin Panel"
+                            : "Buka Dashboard"
+                          : "Masuk ke Dashboard"}
+                      </Link>
+                    }
                   />
                 </div>
                 <p className="mt-6 inline-flex items-center gap-2 text-xs text-white/50">

@@ -49,7 +49,7 @@ export default async function DashboardLayout({
 
         <div className="space-y-3 px-2">
           <Link
-            href="/"
+            href="/?view=landing"
             className="flex items-center gap-2 text-xs text-white/55 transition-colors hover:text-white"
           >
             <ExternalLink className="size-3.5" /> Lihat situs publik

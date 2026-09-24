@@ -1,17 +1,21 @@
 import { prisma } from "@/lib/prisma";
+import { getCurrentProfile } from "@/lib/auth";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const dynamic = "force-dynamic";
 
 export default async function SyaratKetentuanPage() {
-  const terms = await prisma.termsCondition.findMany({
-    orderBy: { order: "asc" },
-  });
+  const [terms, profile] = await Promise.all([
+    prisma.termsCondition.findMany({
+      orderBy: { order: "asc" },
+    }),
+    getCurrentProfile(),
+  ]);
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader profile={profile} />
       <main className="mx-auto max-w-2xl px-6 py-16">
         <h1 className="mb-6 text-2xl font-bold">Syarat dan Ketentuan</h1>
         <p className="mb-6 text-sm text-muted-foreground">

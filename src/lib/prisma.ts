@@ -7,14 +7,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 const SCHEMA_VERSION = 2; // Invalidate cached instance when schema models change
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+function createPrismaClient() {
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  return new PrismaClient({ adapter });
+}
 
 export const prisma =
   globalForPrisma.prisma && globalForPrisma.schemaVersion === SCHEMA_VERSION
     ? globalForPrisma.prisma
-    : new PrismaClient({ adapter });
+    : (globalForPrisma.prisma = createPrismaClient());
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-  globalForPrisma.schemaVersion = SCHEMA_VERSION;
-}
+globalForPrisma.schemaVersion = SCHEMA_VERSION;
