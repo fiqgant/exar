@@ -1,9 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Refreshes the Supabase session cookie and blocks unauthenticated access to
-// /admin/**. Role checks (admin vs client) happen in the admin layout and in
-// each Server Action, per Next's guidance not to rely on proxy alone.
+// Refreshes the Supabase session cookie on ALL routes, but only calls the
+// expensive auth.getUser() network round-trip when strictly necessary (i.e.
+// for /admin/** routes where we need to block unauthenticated access).
+//
+// For /dashboard/** and public routes the layout.tsx already handles redirects
+// via getCurrentClient()/getCurrentProfile() — no need to double-verify here.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -28,12 +31,19 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const { data } = await supabase.auth.getUser();
-
-  if (!data.user && request.nextUrl.pathname.startsWith("/admin")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  // Only pay the Supabase network round-trip for /admin routes.
+  // All other routes rely on layout-level guards (getCurrentClient / requireAdmin).
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+  } else {
+    // For non-admin routes, just trigger cookie refresh passively (no network call).
+    // The supabase client above has already done the cookie setup.
+    await supabase.auth.getSession();
   }
 
   return response;
@@ -42,10 +52,9 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Only run the proxy on real page navigations.
-     * Skip: Next.js internals (_next/), static files, images, favicon.
-     * This prevents an extra Supabase auth.getUser() round-trip for every
-     * RSC payload request fired during client-side navigation.
+     * Match all paths except Next.js internals and static assets.
+     * RSC payload requests (?_rsc=...) still pass through so cookies are
+     * refreshed, but we skip the costly auth.getUser() for non-admin paths.
      */
     "/((?!_next/static|_next/image|favicon\\.ico).*)",
   ],
