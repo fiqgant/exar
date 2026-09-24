@@ -48,17 +48,31 @@ next-env.d.ts
 /reference
 
 # AI tools & agent configs
-/.omo/
+.omo/
+.omo
 .codegraph
 CLAUDE.md
 AGENTS.md
+.claude/
+.claude
+.cursor/
 .cursor
 .cursorrules
+.windsurf/
 .windsurf
 .windsurfrules
+.cline/
 .cline
+.roo/
 .roo
 .aider*
+.gemini/
 .gemini
+.antigravity/
 .antigravity
+.copilot/
 .copilot
+.v0/
+.devin/
+*.prompt
+*.prompts
