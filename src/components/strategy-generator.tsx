@@ -2,7 +2,14 @@
 
 import { useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { CircleCheck, Lightbulb, Sparkles, Target, Zap, MessageCircle } from "lucide-react";
+import {
+  CircleCheck,
+  Lightbulb,
+  Sparkles,
+  Target,
+  Zap,
+  MessageCircle,
+} from "lucide-react";
 import { requestStrategy, type StrategyActionState } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +58,11 @@ function SubmitButton() {
   );
 }
 
-export function StrategyGenerator({ whatsappNumber = "6281234567890" }: { whatsappNumber?: string }) {
+export function StrategyGenerator({
+  whatsappNumber = "6281234567890",
+}: {
+  whatsappNumber?: string;
+}) {
   const [state, formAction] = useActionState(requestStrategy, initialState);
   const [businessInfo, setBusinessInfo] = useState<{
     businessName: string;
@@ -110,8 +121,8 @@ export function StrategyGenerator({ whatsappNumber = "6281234567890" }: { whatsa
 
         <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            Gratis & tanpa login. Hasilnya berupa rekomendasi awal yang bisa
-            langsung didiskusikan dengan tim kami.
+            Hasilnya berupa rekomendasi awal yang bisa langsung didiskusikan
+            dengan tim kami.
           </p>
           <SubmitButton />
         </div>
@@ -140,7 +151,11 @@ function StrategyResultView({
   whatsappNumber,
 }: {
   result: StrategyResult;
-  businessInfo: { businessName: string; businessType: string; goal: string } | null;
+  businessInfo: {
+    businessName: string;
+    businessType: string;
+    goal: string;
+  } | null;
   whatsappNumber: string;
 }) {
   return (

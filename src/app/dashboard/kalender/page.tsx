@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentClient } from "@/lib/auth";
 import {
@@ -16,9 +17,8 @@ export default async function KalenderPage({
 }) {
   const session = await getCurrentClient();
   const client = session?.client;
-  if (!client) {
+  if (!client)
     return <p className="text-muted-foreground">Workspace belum tersedia.</p>;
-  }
 
   const { m } = await searchParams;
   const now = new Date();
@@ -47,7 +47,6 @@ export default async function KalenderPage({
     byDay.set(d, [...(byDay.get(d) ?? []), c]);
   }
 
-  // Grid starts on Monday.
   const firstWeekday = (monthStart.getDay() + 6) % 7;
   const daysInMonth = monthEnd.getDate();
   const cells: (number | null)[] = [
@@ -68,43 +67,53 @@ export default async function KalenderPage({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Kalender Konten</h1>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+            ● Kalender
+          </p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-[#2d2d2d]">
+            Kalender Konten
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Jadwal publikasi & status konten Anda.
+            Jadwal publikasi &amp; status konten Anda.
           </p>
         </div>
+        {/* Month navigation */}
         <div className="flex items-center gap-2">
           <Link
             href={`/dashboard/kalender?m=${fmt(prev)}`}
-            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-muted"
+            className="flex size-9 items-center justify-center rounded-lg border-2 border-[#2d2d2d] bg-white shadow-[2px_2px_0_#2d2d2d] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#2d2d2d] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
           >
-            ← Sebelumnya
+            <ChevronLeft className="size-4" />
           </Link>
-          <span className="min-w-40 text-center text-sm font-semibold">
+          <span className="min-w-44 rounded-lg border-2 border-[#2d2d2d] bg-white px-4 py-2 text-center text-sm font-black text-[#2d2d2d] shadow-[2px_2px_0_#2d2d2d]">
             {monthLabel}
           </span>
           <Link
             href={`/dashboard/kalender?m=${fmt(next)}`}
-            className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm hover:bg-muted"
+            className="flex size-9 items-center justify-center rounded-lg border-2 border-[#2d2d2d] bg-white shadow-[2px_2px_0_#2d2d2d] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_#2d2d2d] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
           >
-            Berikutnya →
+            <ChevronRight className="size-4" />
           </Link>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="grid grid-cols-7 border-b border-border bg-secondary/60">
+      {/* Calendar grid */}
+      <div className="nb-card overflow-hidden">
+        {/* Weekday header */}
+        <div className="grid grid-cols-7 border-b-2 border-[#2d2d2d] bg-[#2d2d2d]">
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className="px-2 py-3 text-center text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+              className="px-2 py-3 text-center text-[10px] font-black uppercase tracking-[0.15em] text-white/60"
             >
               {d}
             </div>
           ))}
         </div>
+        {/* Day cells */}
         <div className="grid grid-cols-7">
           {cells.map((day, i) => {
             const items = day ? (byDay.get(day) ?? []) : [];
@@ -115,39 +124,36 @@ export default async function KalenderPage({
             return (
               <div
                 key={i}
-                className={`min-h-28 border-r border-b border-border p-2 last:border-r-0 ${
-                  day ? "" : "bg-secondary/30"
-                }`}
+                className={`min-h-24 border-r-2 border-b-2 border-[#2d2d2d]/10 p-1.5 ${
+                  i % 7 === 6 ? "border-r-0" : ""
+                } ${day ? "bg-white" : "bg-[#f5f4f0]"}`}
               >
                 {day && (
                   <>
                     <span
-                      className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold ${
+                      className={`inline-flex size-6 items-center justify-center rounded-md text-xs font-black ${
                         isToday
-                          ? "bg-primary text-white"
-                          : "text-muted-foreground"
+                          ? "border-2 border-[#2d2d2d] bg-primary text-white shadow-[1px_1px_0_#2d2d2d]"
+                          : "text-[#2d2d2d]/60"
                       }`}
                     >
                       {day}
                     </span>
-                    <div className="mt-1 space-y-1">
-                      {items.slice(0, 3).map((item) => {
-                        const status = CONTENT_STATUS[item.status];
-                        return (
-                          <Link
-                            key={item.id}
-                            href={`/dashboard/konten/${item.id}`}
-                            className="block rounded-md px-1.5 py-1 text-[10px] leading-tight font-medium text-white"
-                            style={{ backgroundColor: item.previewColor }}
-                            title={`${item.title} · ${PLATFORM_LABEL[item.platform]} · ${status.label}`}
-                          >
-                            <span className="line-clamp-1">{item.title}</span>
-                          </Link>
-                        );
-                      })}
+                    <div className="mt-1 space-y-0.5">
+                      {items.slice(0, 3).map((item) => (
+                        <Link
+                          key={item.id}
+                          href={`/dashboard/konten/${item.id}`}
+                          className="block rounded border border-black/20 px-1.5 py-0.5 text-[9px] font-black leading-tight text-white transition-opacity hover:opacity-80"
+                          style={{ backgroundColor: item.previewColor }}
+                          title={`${item.title} · ${PLATFORM_LABEL[item.platform]} · ${CONTENT_STATUS[item.status].label}`}
+                        >
+                          <span className="line-clamp-1">{item.title}</span>
+                        </Link>
+                      ))}
                       {items.length > 3 && (
-                        <p className="px-1 text-[10px] text-muted-foreground">
-                          +{items.length - 3} konten lagi
+                        <p className="px-1 text-[9px] font-black text-muted-foreground">
+                          +{items.length - 3}
                         </p>
                       )}
                     </div>
@@ -159,15 +165,19 @@ export default async function KalenderPage({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 rounded-2xl border border-border bg-card p-4">
+      {/* Legend */}
+      <div className="nb-card flex flex-wrap gap-3 p-4">
+        <p className="mr-2 self-center text-[10px] font-black uppercase tracking-widest text-[#2d2d2d]/40">
+          Status:
+        </p>
         {Object.entries(CONTENT_STATUS).map(([key, meta]) => (
-          <span key={key} className="flex items-center gap-2 text-xs">
-            <span className={`size-2.5 rounded-full ${meta.className}`} />
+          <span key={key} className="flex items-center gap-1.5 text-xs font-bold">
+            <span className={`size-3 rounded-sm border border-current ${meta.className}`} />
             {meta.label}
           </span>
         ))}
-        <span className="ml-auto text-xs text-muted-foreground">
-          Jenis konten: {Object.values(CONTENT_TYPE_LABEL).join(" · ")}
+        <span className="ml-auto self-center text-[10px] font-semibold text-muted-foreground">
+          {Object.values(CONTENT_TYPE_LABEL).join(" · ")}
         </span>
       </div>
     </div>
