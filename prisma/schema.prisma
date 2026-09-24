@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+// Mirrors a Supabase Auth user; id matches auth.users.id (uuid).
+model Profile {
+  id        String   @id
+  email     String   @unique
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+}
+
+model Package {
+  id                  String   @id @default(cuid())
+  name                String
+  price               Int
+  recommended         Boolean  @default(false)
+  freeFotoProduk      Boolean  @default(false)
+  managementInstagram Boolean  @default(false)
+  managementTiktok    Boolean  @default(false)
+  managementFacebook  Boolean  @default(false)
+  videoReelsCount     Int
+  feedsDesignCount    Int
+  produksiVisit       String
+  professionalTallent Boolean  @default(false)
+  order               Int      @default(0)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  contracts Contract[]
+}
+
+// One row per numbered clause, so admin can add/edit/reorder/delete freely.
+model TermsCondition {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PortfolioCategory {
+  PHOTOGRAPHY
+  VIDEOGRAPHY
+  CONTENT_CREATION
+  SOCIAL_MEDIA_MANAGEMENT
+}
+
+// No real photo/video assets yet, so the public card renders a solid
+// coverColor block with an icon instead of an <Image>. Swap for a real
+// cover image field once admin can upload to Supabase Storage.
+model Portfolio {
+  id          String            @id @default(cuid())
+  title       String
+  category    PortfolioCategory
+  clientName  String
+  description String
+  coverColor  String            @default("#B42424")
+  // Uploaded to Supabase Storage (bucket "portfolio"); takes priority over
+  // videoUrl, which takes priority over the coverColor+icon placeholder.
+  imageUrl    String?
+  videoUrl    String?
+  order       Int               @default(0)
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum AiProvider {
+  GEMINI
+  GROK
+}
+
+// Singleton (id is always "default"): the one AI key the platform-wide
+// "AI Strategy Generator" feature calls. apiKey is AES-256-GCM encrypted
+// at rest via src/lib/crypto.ts, never stored or logged in plaintext.
+model AiSetting {
+  id        String     @id @default("default")
+  provider  AiProvider @default(GEMINI)
+  apiKey    String
+  updatedAt DateTime   @updatedAt
+}
+
+// Singleton (id is always "default"): platform-wide contact, WhatsApp,
+// social media, and bank account settings managed by admin.
+model SiteSetting {
+  id          String   @id @default("default")
+  whatsapp    String   @default("6281234567890")
+  email       String   @default("halo@exarproject.com")
+  phone       String?  @default("+62 812 3456 7890")
+  address     String?  @default("Bandung, Indonesia")
+  instagram   String?  @default("https://instagram.com/exarproject")
+  bankName    String?  @default("BCA")
+  bankAccount String?  @default("1234567890")
+  bankHolder  String?  @default("PT EXAR Digital Studio")
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Client workspace — powers the post-login client dashboard and the admin
+// management screens.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A client business. profileId is set once the client has a login account and
+// links the workspace to the Supabase-authenticated Profile.
+model Client {
+  id           String   @id @default(cuid())
+  profileId    String?  @unique
+  businessName String
+  businessType String
+  contactName  String
+  email        String?
+  phone        String?
+  address      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contracts Contract[]
+  contents  Content[]
+  leads     Lead[]
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model Contract {
+  id              String        @id @default(cuid())
+  clientId        String
+  packageId       String?
+  packageName     String
+  services        String
+  startDate       DateTime
+  endDate         DateTime
+  value           Int
+  paymentStatus   PaymentStatus @default(UNPAID)
+  paymentProofUrl String?
+  notes           String?
+  isActive        Boolean       @default(true)
+  remindedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  client  Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  package Package? @relation(fields: [packageId], references: [id])
+}
+
+enum ContentType {
+  REELS
+  FEED
+  STORY
+  CAROUSEL
+  VIDEO
+}
+
+enum ContentPlatform {
+  INSTAGRAM
+  TIKTOK
+  FACEBOOK
+}
+
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  REVISION
+  APPROVED
+  REJECTED
+}
+
+model Content {
+  id           String          @id @default(cuid())
+  clientId     String
+  title        String
+  type         ContentType     @default(REELS)
+  platform     ContentPlatform @default(INSTAGRAM)
+  status       ContentStatus   @default(DRAFT)
+  scheduledAt  DateTime
+  caption      String
+  hashtags     String          @default("")
+  objective    String          @default("")
+  strategy     String          @default("")
+  previewColor String          @default("#B42424")
+  imageUrl     String?
+  videoUrl     String?
+  rejectReason String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  client    Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  revisions ContentRevision[]
+}
+
+// Immutable audit trail of every approve / revision / reject decision, so both
+// EXAR and the client can see what changed and when.
+model ContentRevision {
+  id        String   @id @default(cuid())
+  contentId String
+  action    String
+  note      String?
+  actor     String   @default("CLIENT")
+  createdAt DateTime @default(now())
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  FOLLOW_UP
+  QUALIFIED
+  CONVERTED
+}
+
+model Lead {
+  id             String     @id @default(cuid())
+  clientId       String
+  name           String
+  source         String
+  interest       String
+  status         LeadStatus @default(NEW)
+  followUp       String?
+  potentialValue Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+}
