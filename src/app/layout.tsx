@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist_Mono, Onest } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
 const onest = Onest({
@@ -43,6 +45,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${onest.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Global navigation progress bar — appears on every link click */}
+        <Suspense>
+          <NavigationProgress />
+        </Suspense>
         {children}
         <Toaster position="top-center" />
       </body>

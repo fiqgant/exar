@@ -1,3 +1,5 @@
+export const preferredRegion = "sin1"; // Run near Supabase SG
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { LogOut, ExternalLink } from "lucide-react";

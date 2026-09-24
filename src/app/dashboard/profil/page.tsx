@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentClient } from "@/lib/auth";
 import { updateProfile } from "./actions";
 import { User, Building2, ShieldCheck, AlertCircle } from "lucide-react";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 
 export default async function ProfilPage() {
   const session = await getCurrentClient();
@@ -148,12 +149,13 @@ export default async function ProfilPage() {
                     />
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  className="mt-6 rounded-lg border-2 border-[#2d2d2d] bg-primary px-6 py-2.5 text-sm font-black text-white shadow-[3px_3px_0_#2d2d2d] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[5px_5px_0_#2d2d2d] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                <FormSubmitButton
+                  variant="neo"
+                  loadingText="Menyimpan…"
+                  className="mt-6"
                 >
                   Simpan Perubahan
-                </button>
+                </FormSubmitButton>
               </div>
             </form>
           ) : (

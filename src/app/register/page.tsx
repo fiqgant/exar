@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, CircleAlert } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ExarLogo } from "@/components/exar-logo";
@@ -157,9 +157,13 @@ export default async function RegisterPage({
               </div>
             )}
 
-            <Button type="submit" size="lg" className="w-full">
+            <FormSubmitButton
+              variant="primary-full"
+              loadingText="Membuat akun…"
+              className="py-3 text-base font-bold"
+            >
               Daftar & Mulai
-            </Button>
+            </FormSubmitButton>
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">

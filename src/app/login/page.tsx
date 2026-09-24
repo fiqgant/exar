@@ -2,10 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ExarLogo } from "@/components/exar-logo";
+import { FormSubmitButton } from "@/components/ui/form-submit-button";
 import { signIn } from "./actions";
 
 export default async function LoginPage({
@@ -137,9 +137,13 @@ export default async function LoginPage({
               </div>
             )}
 
-            <Button type="submit" size="lg" className="w-full">
+            <FormSubmitButton
+              variant="primary-full"
+              loadingText="Sedang masuk…"
+              className="py-3 text-base font-bold"
+            >
               Masuk
-            </Button>
+            </FormSubmitButton>
           </form>
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
