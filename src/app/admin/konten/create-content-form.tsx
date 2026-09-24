@@ -1,13 +1,13 @@
 "use client";
 
 import { useRef, useTransition, useState } from "react";
-import { Loader2, Upload, Video, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, Video, Image as ImageIcon, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CONTENT_TYPE_LABEL, PLATFORM_LABEL } from "@/lib/format";
+import { CONTENT_TYPE_LABEL, PLATFORM_LABEL, isYouTubeUrl, getYouTubeThumbnailUrl } from "@/lib/format";
 import { createContent } from "./actions";
 
 type ClientOption = {
@@ -19,6 +19,7 @@ export function CreateContentForm({ clients }: { clients: ClientOption[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,6 +48,7 @@ export function CreateContentForm({ clients }: { clients: ClientOption[] }) {
         toast.success("Konten baru berhasil dibuat & dikirim ke klien");
         formRef.current?.reset();
         setImagePreview(null);
+        setVideoUrl("");
       }
     });
   };
@@ -206,20 +208,47 @@ export function CreateContentForm({ clients }: { clients: ClientOption[] }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="create-videoUrl" className="text-xs">
-                Atau Link Video (URL MP4 / Cloud)
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="create-videoUrl" className="text-xs">
+                  Atau Link Video (YouTube / MP4 / Cloud)
+                </Label>
+                {isYouTubeUrl(videoUrl) && (
+                  <span className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                    <span className="size-1.5 rounded-full bg-red-600 animate-pulse" />
+                    YouTube Terdeteksi
+                  </span>
+                )}
+              </div>
               <Input
                 id="create-videoUrl"
                 name="videoUrl"
                 type="url"
-                placeholder="https://assets.mixkit.co/.../video.mp4"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... atau https://youtu.be/..."
                 disabled={isPending}
                 className="text-xs"
               />
               <p className="text-[11px] text-muted-foreground">
-                Alternatif jika video sudah diupload di cloud/CDN.
+                Mendukung link YouTube (Video biasa & Shorts) atau file video direct (MP4). Thumbnail otomatis diambil dari YouTube jika gambar tidak diupload.
               </p>
+
+              {isYouTubeUrl(videoUrl) && getYouTubeThumbnailUrl(videoUrl) && !imagePreview && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-[11px] font-medium text-foreground">Thumbnail YouTube Otomatis:</p>
+                  <div className="relative h-24 w-40 overflow-hidden rounded-lg border border-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getYouTubeThumbnailUrl(videoUrl)!}
+                      alt="YouTube Thumbnail"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                      <Play className="size-5 text-white fill-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

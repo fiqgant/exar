@@ -6,6 +6,8 @@ import {
   CONTENT_TYPE_LABEL,
   PLATFORM_LABEL,
   formatDate,
+  isYouTubeUrl,
+  getYouTubeThumbnailUrl,
 } from "@/lib/format";
 
 const TABS = [
@@ -92,12 +94,17 @@ export default async function KontenPage({
               >
                 <div
                   className="relative flex h-36 items-center justify-center overflow-hidden bg-muted"
-                  style={{ backgroundColor: item.imageUrl ? undefined : item.previewColor }}
+                  style={{
+                    backgroundColor:
+                      item.imageUrl || (item.videoUrl && isYouTubeUrl(item.videoUrl))
+                        ? undefined
+                        : item.previewColor,
+                  }}
                 >
-                  {item.imageUrl ? (
+                  {item.imageUrl || (item.videoUrl && isYouTubeUrl(item.videoUrl)) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={item.imageUrl}
+                      src={item.imageUrl || getYouTubeThumbnailUrl(item.videoUrl)!}
                       alt={item.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
@@ -119,9 +126,13 @@ export default async function KontenPage({
                     {PLATFORM_LABEL[item.platform]}
                   </span>
 
-                  {item.videoUrl && item.imageUrl && (
-                    <span className="absolute top-2.5 right-2.5 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-md flex items-center gap-1">
-                      ▶ Video
+                  {item.videoUrl && (
+                    <span
+                      className={`absolute top-2.5 right-2.5 rounded-full px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-md flex items-center gap-1 ${
+                        isYouTubeUrl(item.videoUrl) ? "bg-red-600/90 font-semibold" : "bg-black/60"
+                      }`}
+                    >
+                      ▶ {isYouTubeUrl(item.videoUrl) ? "YouTube" : "Video"}
                     </span>
                   )}
                 </div>

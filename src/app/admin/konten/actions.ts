@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getYouTubeThumbnailUrl } from "@/lib/format";
 
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024; // 15 MB
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -107,6 +108,12 @@ export async function createContent(formData: FormData) {
           error: `Gagal upload video: ${err instanceof Error ? err.message : "Kesalahan server"}`,
         };
       }
+    }
+
+    // Auto-extract YouTube thumbnail if no image is uploaded
+    if (!finalImageUrl && finalVideoUrl) {
+      const ytThumb = getYouTubeThumbnailUrl(finalVideoUrl);
+      if (ytThumb) finalImageUrl = ytThumb;
     }
 
     const scheduledDate = new Date(scheduledAt);
@@ -229,6 +236,12 @@ export async function updateContent(id: string, formData: FormData) {
     }
     if (formData.get("removeVideo") === "true") {
       finalVideoUrl = null;
+    }
+
+    // Auto-extract YouTube thumbnail if no image is uploaded
+    if (!finalImageUrl && finalVideoUrl) {
+      const ytThumb = getYouTubeThumbnailUrl(finalVideoUrl);
+      if (ytThumb) finalImageUrl = ytThumb;
     }
 
     const scheduledDate = new Date(scheduledAt);

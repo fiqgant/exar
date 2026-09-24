@@ -68,3 +68,30 @@ export const PAYMENT_STATUS: Record<string, { label: string; className: string }
   PARTIAL: { label: "Sebagian", className: "bg-amber-500/10 text-amber-600" },
   PAID: { label: "Lunas", className: "bg-emerald-500/10 text-emerald-600" },
 };
+
+/** Extracts YouTube video ID from various YouTube URL formats (watch, youtu.be, shorts, embed) */
+export function getYouTubeVideoId(url?: string | null): string | null {
+  if (!url) return null;
+  const trimmed = url.trim();
+  const match = trimmed.match(
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i,
+  );
+  return match && match[1] ? match[1] : null;
+}
+
+/** Returns YouTube embed iframe URL (using privacy-enhanced youtube-nocookie.com) */
+export function getYouTubeEmbedUrl(url?: string | null): string | null {
+  const id = getYouTubeVideoId(url);
+  return id ? `https://www.youtube-nocookie.com/embed/${id}?rel=0` : null;
+}
+
+/** Returns YouTube high quality thumbnail URL */
+export function getYouTubeThumbnailUrl(url?: string | null): string | null {
+  const id = getYouTubeVideoId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+/** Checks whether a URL is a YouTube link */
+export function isYouTubeUrl(url?: string | null): boolean {
+  return Boolean(getYouTubeVideoId(url));
+}

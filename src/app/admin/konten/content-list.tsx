@@ -11,6 +11,7 @@ import {
   ImageIcon,
   Upload,
   ExternalLink,
+  Play,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,9 @@ import {
   CONTENT_TYPE_LABEL,
   PLATFORM_LABEL,
   formatDate,
+  getYouTubeEmbedUrl,
+  getYouTubeThumbnailUrl,
+  isYouTubeUrl,
 } from "@/lib/format";
 import { updateContent, deleteContent } from "./actions";
 
@@ -221,10 +225,10 @@ export function ContentList({
                   >
                     <td className="px-4 py-3">
                       <div className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-border bg-secondary">
-                        {item.imageUrl ? (
+                        {item.imageUrl || (item.videoUrl && isYouTubeUrl(item.videoUrl)) ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={item.imageUrl}
+                            src={item.imageUrl || getYouTubeThumbnailUrl(item.videoUrl)!}
                             alt={item.title}
                             className="h-full w-full object-cover"
                           />
@@ -240,9 +244,17 @@ export function ContentList({
                             {item.type.slice(0, 3)}
                           </div>
                         )}
-                        {item.videoUrl && item.imageUrl && (
-                          <span className="absolute bottom-0.5 right-0.5 rounded bg-black/70 p-0.5 text-white">
-                            <Video className="size-2.5" />
+                        {item.videoUrl && (
+                          <span
+                            className={`absolute bottom-0.5 right-0.5 rounded p-0.5 text-white ${
+                              isYouTubeUrl(item.videoUrl) ? "bg-red-600" : "bg-black/70"
+                            }`}
+                          >
+                            {isYouTubeUrl(item.videoUrl) ? (
+                              <Play className="size-2.5 fill-white" />
+                            ) : (
+                              <Video className="size-2.5" />
+                            )}
                           </span>
                         )}
                       </div>
@@ -524,17 +536,20 @@ export function ContentList({
 
                       <div className="pt-1">
                         <Label htmlFor="edit-videoUrl" className="text-xs">
-                          Atau Link Video (URL MP4 / Cloud)
+                          Atau Link Video (YouTube / MP4 / Cloud URL)
                         </Label>
                         <Input
                           id="edit-videoUrl"
                           name="videoUrl"
                           type="url"
                           defaultValue={editingContent.videoUrl ?? ""}
-                          placeholder="https://assets.../video.mp4"
+                          placeholder="https://www.youtube.com/watch?v=... atau https://youtu.be/... atau .mp4"
                           disabled={isUpdating}
                           className="text-xs"
                         />
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Mendukung link YouTube (Video biasa & Shorts) atau file video direct.
+                        </p>
                       </div>
 
                       {editingContent.videoUrl && (
@@ -545,16 +560,29 @@ export function ContentList({
                               href={editingContent.videoUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-primary hover:underline"
+                              className={`inline-flex items-center gap-1 hover:underline ${
+                                isYouTubeUrl(editingContent.videoUrl) ? "text-red-600 font-medium" : "text-primary"
+                              }`}
                             >
-                              Buka video <ExternalLink className="size-3" />
+                              {isYouTubeUrl(editingContent.videoUrl) ? "Tonton di YouTube" : "Buka video"}{" "}
+                              <ExternalLink className="size-3" />
                             </a>
                           </div>
-                          <video
-                            src={editingContent.videoUrl}
-                            controls
-                            className="h-28 w-full rounded-lg bg-black object-contain"
-                          />
+                          {getYouTubeEmbedUrl(editingContent.videoUrl) ? (
+                            <iframe
+                              src={getYouTubeEmbedUrl(editingContent.videoUrl)!}
+                              title="YouTube preview"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              className="h-32 w-full rounded-lg bg-black border-0"
+                            />
+                          ) : (
+                            <video
+                              src={editingContent.videoUrl}
+                              controls
+                              className="h-28 w-full rounded-lg bg-black object-contain"
+                            />
+                          )}
                           <label className="flex items-center gap-1.5 text-xs text-destructive cursor-pointer">
                             <input
                               type="checkbox"

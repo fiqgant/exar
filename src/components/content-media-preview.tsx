@@ -15,7 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CONTENT_TYPE_LABEL } from "@/lib/format";
+import {
+  CONTENT_TYPE_LABEL,
+  getYouTubeEmbedUrl,
+  getYouTubeThumbnailUrl,
+  isYouTubeUrl,
+} from "@/lib/format";
 
 export function ContentMediaPreview({
   imageUrl,
@@ -30,9 +35,14 @@ export function ContentMediaPreview({
   type: string;
   title: string;
 }) {
-  const hasBoth = Boolean(imageUrl && videoUrl);
+  const isYoutube = isYouTubeUrl(videoUrl);
+  const youtubeEmbed = getYouTubeEmbedUrl(videoUrl);
+  const youtubeThumbnail = getYouTubeThumbnailUrl(videoUrl);
+  const effectiveImageUrl = imageUrl || youtubeThumbnail;
+
+  const hasBoth = Boolean(effectiveImageUrl && videoUrl);
   const [activeTab, setActiveTab] = useState<"video" | "image">(
-    videoUrl ? "video" : "image"
+    videoUrl ? "video" : "image",
   );
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
@@ -49,7 +59,7 @@ export function ContentMediaPreview({
             className="h-8 gap-1.5 text-xs"
           >
             <Video className="size-3.5" />
-            Video Preview
+            {isYoutube ? "YouTube Video" : "Video Preview"}
           </Button>
           <Button
             type="button"
@@ -59,7 +69,7 @@ export function ContentMediaPreview({
             className="h-8 gap-1.5 text-xs"
           >
             <ImageIcon className="size-3.5" />
-            Gambar / Desain
+            {imageUrl ? "Gambar / Desain" : "Thumbnail Video"}
           </Button>
         </div>
       )}
@@ -69,29 +79,50 @@ export function ContentMediaPreview({
         {/* VIDEO TAB / VIEW */}
         {videoUrl && (!hasBoth || activeTab === "video") && (
           <div className="relative aspect-video w-full bg-black flex items-center justify-center">
-            <video
-              src={videoUrl}
-              controls
-              poster={imageUrl || undefined}
-              className="h-full w-full object-contain"
-              playsInline
-            >
-              Browser Anda tidak mendukung tag video HTML5.
-            </video>
+            {youtubeEmbed ? (
+              <iframe
+                src={youtubeEmbed}
+                title={title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            ) : (
+              <video
+                src={videoUrl}
+                controls
+                poster={effectiveImageUrl || undefined}
+                className="h-full w-full object-contain"
+                playsInline
+              >
+                Browser Anda tidak mendukung tag video HTML5.
+              </video>
+            )}
+
             <div className="absolute top-3 right-3 flex items-center gap-1.5 pointer-events-none">
-              <span className="rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-md flex items-center gap-1 pointer-events-auto">
-                <Play className="size-3 text-primary fill-primary" /> Video Review
+              <span className="rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-md flex items-center gap-1.5 pointer-events-auto">
+                {isYoutube ? (
+                  <>
+                    <span className="size-2 rounded-full bg-red-600 animate-pulse" />
+                    <span>YouTube</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="size-3 text-primary fill-primary" />
+                    <span>Video Review</span>
+                  </>
+                )}
               </span>
             </div>
           </div>
         )}
 
         {/* IMAGE TAB / VIEW */}
-        {imageUrl && (!videoUrl || (hasBoth && activeTab === "image")) && (
+        {effectiveImageUrl && (!videoUrl || (hasBoth && activeTab === "image")) && (
           <div className="group relative aspect-video w-full overflow-hidden bg-secondary flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={imageUrl}
+              src={effectiveImageUrl}
               alt={title}
               className="h-full w-full object-contain bg-black/5"
             />
@@ -122,7 +153,7 @@ export function ContentMediaPreview({
         )}
 
         {/* PLACEHOLDER WHEN NO MEDIA IS AVAILABLE */}
-        {!imageUrl && !videoUrl && (
+        {!effectiveImageUrl && !videoUrl && (
           <div
             className="relative flex h-64 items-center justify-center overflow-hidden"
             style={{ backgroundColor: previewColor }}
@@ -141,19 +172,21 @@ export function ContentMediaPreview({
       </div>
 
       {/* Direct external link if video or image is present */}
-      {(videoUrl || imageUrl) && (
+      {(videoUrl || effectiveImageUrl) && (
         <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">
           {videoUrl && (
             <a
               href={videoUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+              className={`inline-flex items-center gap-1 transition-colors ${
+                isYoutube ? "text-red-600 hover:text-red-700 font-medium" : "hover:text-primary"
+              }`}
             >
-              Buka video di tab baru <ExternalLink className="size-3" />
+              {isYoutube ? "Tonton di YouTube" : "Buka video di tab baru"} <ExternalLink className="size-3" />
             </a>
           )}
-          {imageUrl && (
+          {effectiveImageUrl && (
             <button
               type="button"
               onClick={() => setIsZoomOpen(true)}
@@ -166,7 +199,7 @@ export function ContentMediaPreview({
       )}
 
       {/* Image Zoom Modal Lightbox */}
-      {imageUrl && (
+      {effectiveImageUrl && (
         <Dialog open={isZoomOpen} onOpenChange={setIsZoomOpen}>
           <DialogContent className="max-w-4xl p-2 sm:p-4 bg-background/95 backdrop-blur-md">
             <DialogHeader className="px-2 pt-2">
@@ -175,7 +208,7 @@ export function ContentMediaPreview({
             <div className="relative mt-2 max-h-[80vh] overflow-hidden rounded-xl bg-black flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={imageUrl}
+                src={effectiveImageUrl}
                 alt={title}
                 className="max-h-[78vh] w-auto object-contain mx-auto"
               />
