@@ -140,17 +140,20 @@ export default async function KalenderPage({
                       {day}
                     </span>
                     <div className="mt-1 space-y-0.5">
-                      {items.slice(0, 3).map((item) => (
-                        <Link
-                          key={item.id}
-                          href={`/dashboard/konten/${item.id}`}
-                          className="block rounded border border-black/20 px-1.5 py-0.5 text-[9px] font-black leading-tight text-white transition-opacity hover:opacity-80"
-                          style={{ backgroundColor: item.previewColor }}
-                          title={`${item.title} · ${PLATFORM_LABEL[item.platform]} · ${CONTENT_STATUS[item.status].label}`}
-                        >
-                          <span className="line-clamp-1">{item.title}</span>
-                        </Link>
-                      ))}
+                      {items.slice(0, 3).map((item) => {
+                        const st = CONTENT_STATUS[item.status];
+                        return (
+                          <Link
+                            key={item.id}
+                            href={`/dashboard/konten/${item.id}`}
+                            className="group/ev block overflow-hidden rounded border-2 border-black/25 px-1.5 py-0.5 text-[9px] font-black leading-tight text-white shadow-[1px_1px_0_rgba(0,0,0,0.25)] transition-all hover:opacity-90 hover:shadow-none"
+                            style={{ backgroundColor: st.color }}
+                            title={`${item.title} · ${PLATFORM_LABEL[item.platform]} · ${st.label}`}
+                          >
+                            <span className="line-clamp-1">{item.title}</span>
+                          </Link>
+                        );
+                      })}
                       {items.length > 3 && (
                         <p className="px-1 text-[9px] font-black text-muted-foreground">
                           +{items.length - 3}
@@ -166,19 +169,29 @@ export default async function KalenderPage({
       </div>
 
       {/* Legend */}
-      <div className="nb-card flex flex-wrap gap-3 p-4">
-        <p className="mr-2 self-center text-[10px] font-black uppercase tracking-widest text-[#2d2d2d]/40">
-          Status:
-        </p>
-        {Object.entries(CONTENT_STATUS).map(([key, meta]) => (
-          <span key={key} className="flex items-center gap-1.5 text-xs font-bold">
-            <span className={`size-3 rounded-sm border border-current ${meta.className}`} />
-            {meta.label}
-          </span>
-        ))}
+      <div className="nb-card overflow-hidden">
+        <div className="border-b-2 border-[#2d2d2d] bg-[#2d2d2d] px-4 py-2.5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
+            Legenda Status
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3 p-4">
+          {Object.entries(CONTENT_STATUS).map(([key, meta]) => (
+            <span
+              key={key}
+              className="flex items-center gap-2 rounded-lg border-2 border-[#2d2d2d] bg-[#f5f4f0] px-3 py-1.5 text-xs font-black text-[#2d2d2d] shadow-[2px_2px_0_#2d2d2d]"
+            >
+              <span
+                className="size-3 shrink-0 rounded-sm border-2 border-[#2d2d2d]"
+                style={{ backgroundColor: meta.color }}
+              />
+              {meta.label}
+            </span>
+          ))}
         <span className="ml-auto self-center text-[10px] font-semibold text-muted-foreground">
           {Object.values(CONTENT_TYPE_LABEL).join(" · ")}
         </span>
+        </div>
       </div>
     </div>
   );

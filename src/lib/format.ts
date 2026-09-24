@@ -32,13 +32,16 @@ export function daysUntil(date: Date | string) {
   return Math.round((target.getTime() - now.getTime()) / 86_400_000);
 }
 
-export const CONTENT_STATUS: Record<string, { label: string; className: string }> = {
-  DRAFT: { label: "Draft", className: "bg-muted text-muted-foreground" },
-  SCHEDULED: { label: "Scheduled", className: "bg-blue-500/10 text-blue-600" },
-  PUBLISHED: { label: "Published", className: "bg-emerald-500/10 text-emerald-600" },
-  REVISION: { label: "Revision", className: "bg-amber-500/10 text-amber-600" },
-  APPROVED: { label: "Approved", className: "bg-primary/10 text-primary" },
-  REJECTED: { label: "Rejected", className: "bg-red-500/10 text-red-600" },
+export const CONTENT_STATUS: Record<
+  string,
+  { label: string; className: string; color: string }
+> = {
+  DRAFT:     { label: "Draft",      className: "bg-slate-100 text-slate-700",    color: "#64748b" },
+  SCHEDULED: { label: "Review",     className: "bg-blue-100 text-blue-800",      color: "#3b82f6" },
+  PUBLISHED: { label: "Published",  className: "bg-emerald-100 text-emerald-800",color: "#10b981" },
+  REVISION:  { label: "Revisi",     className: "bg-orange-100 text-orange-800",  color: "#f97316" },
+  APPROVED:  { label: "Approved",   className: "bg-violet-100 text-violet-800",  color: "#8b5cf6" },
+  REJECTED:  { label: "Rejected",   className: "bg-red-100 text-red-800",        color: "#ef4444" },
 };
 
 export const CONTENT_TYPE_LABEL: Record<string, string> = {
