@@ -40,5 +40,13 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Only run the proxy on real page navigations.
+     * Skip: Next.js internals (_next/), static files, images, favicon.
+     * This prevents an extra Supabase auth.getUser() round-trip for every
+     * RSC payload request fired during client-side navigation.
+     */
+    "/((?!_next/static|_next/image|favicon\\.ico).*)",
+  ],
 };

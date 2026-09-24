@@ -1,13 +1,14 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getCurrentProfile() {
+export const getCurrentProfile = cache(async () => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) return null;
 
   return prisma.profile.findUnique({ where: { id: data.user.id } });
-}
+});
 
 /** Throws if there is no signed-in admin. Call at the top of every admin Server Action. */
 export async function requireAdmin() {
@@ -23,26 +24,22 @@ export async function requireAdmin() {
  * profile is a CLIENT but not yet linked to a Client row, we fall back to the
  * single demo workspace so the dashboard is explorable without extra setup.
  */
-export async function getCurrentClient() {
+export const getCurrentClient = cache(async () => {
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
   const linked = await prisma.client.findUnique({
     where: { profileId: profile.id },
-    include: {
-      contracts: { orderBy: { startDate: "desc" } },
-    },
   });
   if (linked) return { profile, client: linked };
 
   if (profile.role === "CLIENT") {
     const demo = await prisma.client.findFirst({
       where: { isActive: true },
-      include: { contracts: { orderBy: { startDate: "desc" } } },
       orderBy: { createdAt: "asc" },
     });
     if (demo) return { profile, client: demo };
   }
 
   return { profile, client: null };
-}
+});

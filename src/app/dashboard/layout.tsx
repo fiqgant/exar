@@ -12,7 +12,6 @@ const NAV_ITEMS: { href: string; label: string; icon: NavIconName }[] = [
   { href: "/dashboard/strategi", label: "AI Strategy", icon: "strategy" },
   { href: "/dashboard/kalender", label: "Kalender Konten", icon: "calendar" },
   { href: "/dashboard/konten", label: "Content Management", icon: "content" },
-  { href: "/dashboard/leads", label: "Leads", icon: "leads" },
   { href: "/dashboard/kontrak", label: "Kontrak", icon: "contract" },
   { href: "/dashboard/profil", label: "Profil", icon: "profile" },
 ];

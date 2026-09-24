@@ -2,17 +2,17 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   CalendarDays,
+  CheckCircle,
+  Clock,
   Layers,
+  RotateCcw,
   Sparkles,
-  TrendingUp,
-  Users,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentClient } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   CONTENT_STATUS,
-  LEAD_STATUS,
   daysUntil,
   formatDate,
   rupiah,
@@ -33,12 +33,11 @@ export default async function DashboardHome() {
     );
   }
 
-  const [contents, leads, contract] = await Promise.all([
+  const [contents, contract] = await Promise.all([
     prisma.content.findMany({
       where: { clientId: client.id },
       orderBy: { scheduledAt: "asc" },
     }),
-    prisma.lead.findMany({ where: { clientId: client.id } }),
     prisma.contract.findFirst({
       where: { clientId: client.id, isActive: true },
       orderBy: { startDate: "desc" },
@@ -49,9 +48,7 @@ export default async function DashboardHome() {
     (c) => c.status === "APPROVED" || c.status === "SCHEDULED",
   ).length;
   const pendingApproval = contents.filter((c) => c.status === "DRAFT").length;
-  const converted = leads.filter((l) => l.status === "CONVERTED").length;
-  const conversionRate =
-    leads.length > 0 ? Math.round((converted / leads.length) * 100) : 0;
+  const revisionCount = contents.filter((c) => c.status === "REVISION").length;
   const remaining = contract ? daysUntil(contract.endDate) : null;
 
   const cutoff = new Date();
@@ -60,11 +57,19 @@ export default async function DashboardHome() {
     .filter((c) => c.scheduledAt.getTime() >= cutoff.getTime())
     .slice(0, 4);
 
+  const revisions = contents
+    .filter((c) => c.status === "REVISION")
+    .slice(0, 4);
+
   const stats = [
     { label: "Konten Aktif", value: activeContent, icon: Layers },
-    { label: "Total Leads", value: leads.length, icon: Users },
-    { label: "Conversion Rate", value: `${conversionRate}%`, icon: TrendingUp },
-    { label: "Konten Menunggu", value: pendingApproval, icon: CalendarDays },
+    { label: "Menunggu Review", value: pendingApproval, icon: Clock },
+    { label: "Revisi Berjalan", value: revisionCount, icon: RotateCcw },
+    {
+      label: "Sisa Hari Kontrak",
+      value: remaining !== null ? (remaining > 0 ? `${remaining}h` : "Berakhir") : "—",
+      icon: CalendarDays,
+    },
   ];
 
   return (
@@ -75,7 +80,7 @@ export default async function DashboardHome() {
             Halo, {client.businessName}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ringkasan performa dan aktivitas konten Anda bulan ini.
+            Ringkasan aktivitas konten Anda bulan ini.
           </p>
         </div>
         <Button render={<Link href="/dashboard/strategi" />}>
@@ -112,6 +117,9 @@ export default async function DashboardHome() {
               Berakhir {formatDate(contract.endDate)}
               {remaining !== null &&
                 ` · ${remaining > 0 ? `${remaining} hari lagi` : "sudah berakhir"}`}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {contract.services}
             </p>
           </div>
           <Button
@@ -185,45 +193,55 @@ export default async function DashboardHome() {
 
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Leads Terbaru</h2>
+            <h2 className="font-semibold">Perlu Revisi</h2>
             <Link
-              href="/dashboard/leads"
+              href="/dashboard/konten?status=REVISION"
               className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
             >
               Semua <ArrowUpRight className="size-3.5" />
             </Link>
           </div>
           <div className="space-y-3">
-            {leads.slice(0, 4).map((lead) => {
-              const status = LEAD_STATUS[lead.status];
-              return (
-                <div
-                  key={lead.id}
-                  className="rounded-2xl border border-border bg-card p-4"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate font-medium">{lead.name}</p>
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.className}`}
-                    >
-                      {status.label}
-                    </span>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {lead.interest}
-                  </p>
-                  <p className="mt-1 text-xs font-semibold text-primary">
-                    {rupiah(lead.potentialValue)}
-                  </p>
-                </div>
-              );
-            })}
-            {leads.length === 0 && (
-              <p className="rounded-2xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                Belum ada leads.
-              </p>
+            {revisions.map((item) => (
+              <Link
+                key={item.id}
+                href={`/dashboard/konten/${item.id}`}
+                className="flex items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 transition-all hover:border-amber-500/40"
+              >
+                <RotateCcw className="size-4 shrink-0 text-amber-600" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">
+                    {item.title}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {item.platform}
+                  </span>
+                </span>
+              </Link>
+            ))}
+            {revisions.length === 0 && (
+              <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <CheckCircle className="size-4 shrink-0 text-emerald-600" />
+                <p className="text-sm text-emerald-700">
+                  Tidak ada konten yang perlu direvisi.
+                </p>
+              </div>
             )}
           </div>
+
+          {contract && (
+            <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Nilai Kontrak
+              </p>
+              <p className="mt-1 text-xl font-extrabold text-primary">
+                {rupiah(contract.value)}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {contract.packageName}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
