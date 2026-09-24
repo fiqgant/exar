@@ -27,6 +27,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const SERVICES = [
   {

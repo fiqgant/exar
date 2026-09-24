@@ -1,17 +1,19 @@
 "use client";
 
-import { useTransition } from "react";
-import { Loader2, MessageSquare, CreditCard } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Loader2, MessageSquare, CreditCard, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateSiteSettings } from "./actions";
-import type { SiteSettings } from "@/lib/settings";
+import { type SiteSettings, formatWhatsAppNumber } from "@/lib/settings";
 
 export function SettingsForm({ initialSettings }: { initialSettings: SiteSettings }) {
   const [isPending, startTransition] = useTransition();
+  const [waNumber, setWaNumber] = useState(initialSettings.whatsapp);
+  const [phone, setPhone] = useState(initialSettings.phone || "");
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -42,20 +44,34 @@ export function SettingsForm({ initialSettings }: { initialSettings: SiteSetting
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="whatsapp" className="flex items-center gap-1.5">
-              <span>Nomor WhatsApp Konsultasi</span>
-              <span className="text-destructive">*</span>
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="whatsapp" className="flex items-center gap-1.5">
+                <span>Nomor WhatsApp Konsultasi</span>
+                <span className="text-destructive">*</span>
+              </Label>
+              {waNumber && (
+                <a
+                  href={`https://wa.me/${formatWhatsAppNumber(waNumber)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1 hover:underline"
+                >
+                  <ExternalLink className="size-3" />
+                  Tes Chat (wa.me/{formatWhatsAppNumber(waNumber)})
+                </a>
+              )}
+            </div>
             <Input
               id="whatsapp"
               name="whatsapp"
-              defaultValue={initialSettings.whatsapp}
+              value={waNumber}
+              onChange={(e) => setWaNumber(e.target.value)}
               placeholder="Contoh: 081234567890 atau 6281234567890"
               required
               disabled={isPending}
             />
             <p className="text-[11px] text-muted-foreground">
-              Format otomatis disesuaikan ke format internasional (628...).
+              Format otomatis disesuaikan ke format internasional (628...). Tombol konsultasi di landing page akan langsung membuka nomor ini.
             </p>
           </div>
 
@@ -76,11 +92,23 @@ export function SettingsForm({ initialSettings }: { initialSettings: SiteSetting
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Telepon Kantor (Opsional)</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="phone">Telepon Kantor (Opsional)</Label>
+              {phone && phone !== waNumber && (
+                <button
+                  type="button"
+                  onClick={() => setWaNumber(phone)}
+                  className="text-[11px] text-primary hover:underline cursor-pointer"
+                >
+                  Gunakan sebagai WhatsApp
+                </button>
+              )}
+            </div>
             <Input
               id="phone"
               name="phone"
-              defaultValue={initialSettings.phone}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               placeholder="+62 812 3456 7890"
               disabled={isPending}
             />
